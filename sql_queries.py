@@ -20,18 +20,18 @@ time_table_drop = "DROP TABLE IF EXISTS time;"
 staging_events_table_create= ("""
 CREATE TABLE IF NOT EXISTS staging_events
 (
-    artist             VARCHAR(800) NOT NULL
+    artist             VARCHAR(1200)
     ,auth              VARCHAR(256)
     ,firstName         VARCHAR(256)
     ,gender            CHAR(1)
     ,iteminSession     CHAR(1)
     ,lastName          VARCHAR(256)
-    ,length            DECIMAL(8,5)
+    ,length            FLOAT
     ,level             VARCHAR(20)
     ,location          VARCHAR(800)
     ,method            VARCHAR(256)
     ,page              VARCHAR(256)
-    ,registration      DECIMAL
+    ,registration      FLOAT
     ,session           INTEGER
     ,song              VARCHAR(800)
     ,status            INTEGER
@@ -43,17 +43,17 @@ CREATE TABLE IF NOT EXISTS staging_events
 
 
 staging_songs_table_create = ("""
-CREATE TABLE IF NOT EXISTS staging_events
+CREATE TABLE IF NOT EXISTS staging_songs
 (
     num_songs          INTEGER
     ,artist_id         VARCHAR(800)
-    ,artist_latitude   DECIMAL(2,6)
-    ,artist_longitude  DECIMAL(2,6)
+    ,artist_latitude   FLOAT
+    ,artist_longitude  FLOAT
     ,artist_location   VARCHAR(800)
     ,artist_name       VARCHAR(800)
     ,song_id           VARCHAR(800)
     ,title             VARCHAR(800)
-    ,duration          DECIMAL(8,5)
+    ,duration          FLOAT
     ,year              INTEGER
 );
 """)
@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS songs
     ,title             VARCHAR(800) NOT NULL
     ,artist_id         VARCHAR(800) NOT NULL
     ,year              INTEGER
-    ,duration          DECIMAL(8,5) NOT NULL
+    ,duration          FLOAT        NOT NULL
     ,PRIMARY KEY(song_id)
 )
 SORTKEY(song_id);
@@ -113,8 +113,8 @@ CREATE TABLE IF NOT EXISTS artists
     artist_id          VARCHAR(800) NOT NULL
     ,name              VARCHAR(800) NOT NULL
     ,location          VARCHAR(800)
-    ,lattitude         DECIMAL(2,6) 
-    ,longitude         DECIMAL(2,6)
+    ,lattitude         FLOAT 
+    ,longitude         FLOAT
     ,PRIMARY KEY(artist_id)
 )
 SORTKEY(artist_id);
@@ -132,8 +132,8 @@ CREATE TABLE IF NOT EXISTS time
     ,weekday           VARCHAR(100)
     ,PRIMARY KEY(start_time)
 )
-,DISTKEY(start_time)
-,SORTKEY(start_time);
+DISTKEY(start_time)
+SORTKEY(start_time);
 """)
 
 # STAGING TABLES
@@ -142,7 +142,7 @@ staging_events_copy = ("""
     COPY staging_events FROM {s3_event_data}
     CREDENTIALS 'aws_iam_role={arn_id}'
     REGION 'us-west-2'
-    FORMAT AS {AVRO | JSON} {event_file_path};
+    FORMAT AS JSON {event_file_path};
 """).format(s3_event_data=config['S3']['LOG_DATA'],
             arn_id=config['IAM_ROLE']['ARN'],
             event_file_path=config['S3']['LOG_JSONPATH'])
@@ -151,8 +151,8 @@ staging_songs_copy = ("""
     COPY staging_songs FROM {s3_songs_data}
     CREDENTIALS 'aws_iam_role={arn_id}'
     REGION 'us-west-2'
-    FORMAT AS {AVRO | JSON} 'auto';
-""").format(s3_songs_data=config['S3']['LOG_DATA'],
+    FORMAT AS JSON 'auto';
+""").format(s3_songs_data=config['S3']['SONG_DATA'],
             arn_id=config['IAM_ROLE']['ARN'])
 
 # FINAL TABLES
@@ -225,7 +225,7 @@ FROM songplays;
 
 # QUERY LISTS
 
-create_table_queries = [staging_events_table_create, staging_songs_table_create, songplay_table_create, user_table_create, song_table_create, artist_table_create, time_table_create]
+create_table_queries = [staging_events_table_create, staging_songs_table_create, user_table_create, song_table_create, artist_table_create, time_table_create, songplay_table_create]
 drop_table_queries = [staging_events_table_drop, staging_songs_table_drop, songplay_table_drop, user_table_drop, song_table_drop, artist_table_drop, time_table_drop]
 copy_table_queries = [staging_events_copy, staging_songs_copy]
-insert_table_queries = [songplay_table_insert, user_table_insert, song_table_insert, artist_table_insert, time_table_insert]
+insert_table_queries = [user_table_insert, song_table_insert, artist_table_insert, time_table_insert,songplay_table_insert]
