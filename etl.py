@@ -20,12 +20,17 @@ def main():
     config.read('dwh.cfg')
 
     conn = psycopg2.connect("host={} dbname={} user={} password={} port={}".format(*config['CLUSTER'].values()))
+    print('1.connection established..')
     cur = conn.cursor()
+    print('2.cursor created successfully')
     
     load_staging_tables(cur, conn)
+    print('load data from s3 to staging tables')
     insert_tables(cur, conn)
+    print('insert data from staging tables to redshift tables.')
 
     conn.close()
+    print('close connection')
 
 
 if __name__ == "__main__":

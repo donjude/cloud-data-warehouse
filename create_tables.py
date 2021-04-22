@@ -20,12 +20,17 @@ def main():
     config.read('dwh.cfg')
 
     conn = psycopg2.connect("host={} dbname={} user={} password={} port={}".format(*config['CLUSTER'].values()))
+    print('1.connection established..')
     cur = conn.cursor()
+    print('2.cursor created successfully')
 
     drop_tables(cur, conn)
+    print('3.drop existing tables')
     create_tables(cur, conn)
+    print('4.create or recreate dropped tables')
 
     conn.close()
+    print('5. close connection to redshift')
 
 
 if __name__ == "__main__":

@@ -171,21 +171,56 @@ SELECT (se.ts) AS start_time
 FROM staging_events se
 JOIN staging_songs ss 
 ON (se.song = ss.title AND se.artist = ss.artist_name)
-AND se.method = "PUT"
-
-;
+AND se.method = "NextSong";
 """)
 
 user_table_insert = ("""
+INSERT INTO users
+    (user_id, first_name, last_name, gender, level)
+SELECT userId AS user_id
+    ,title
+    ,artist_id
+    ,year
+    ,duration
+FROM staging_songs
+WHERE artist_id IS NOT NULL;
 """)
 
 song_table_insert = ("""
+INSERT INTO songs
+    (song_id, title, artist_id, year, duration)
+SELECT song_id
+    ,title
+    ,artist_id
+    ,year
+    ,duration
+FROM staging_songs
+WHERE song_id IS NOT NULL;
 """)
 
 artist_table_insert = ("""
+INSERT INTO artists
+    (artist_id, name, location, lattitude, longitude)
+SELECT artist_id
+    ,artist_name AS name
+    ,artist_location AS location
+    ,artist_latitude AS latitude
+    ,artist_longitude AS longitude
+FROM staging_songs
+WHERE artist_id IS NOT NULL;
 """)
 
 time_table_insert = ("""
+INSERT INTO time
+    (start_time, hour, day, week, month, year, weekday)
+SELECT start_time
+    ,EXTRACT(hour FROM start_time) AS hour
+    ,EXTRACT(day FROM start_time) AS day
+    ,EXTRACT(week FROM start_time) AS week
+    ,EXTRACT(month FROM start_time) AS month
+    ,EXTRACT(year FROM start_time) AS year
+    ,EXTRACT(weekday FROM start_time) AS weekday
+FROM songplays;
 """)
 
 # QUERY LISTS
