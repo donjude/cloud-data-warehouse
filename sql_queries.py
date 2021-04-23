@@ -20,24 +20,24 @@ time_table_drop = "DROP TABLE IF EXISTS time;"
 staging_events_table_create= ("""
 CREATE TABLE IF NOT EXISTS staging_events
 (
-    artist             VARCHAR(1200)
-    ,auth              VARCHAR(256)
-    ,firstName         VARCHAR(256)
-    ,gender            CHAR(1)
-    ,iteminSession     CHAR(1)
-    ,lastName          VARCHAR(256)
+    artist             VARCHAR
+    ,auth              VARCHAR
+    ,firstName         VARCHAR
+    ,gender            VARCHAR
+    ,itemInSession     INTEGER
+    ,lastName          VARCHAR
     ,length            FLOAT
-    ,level             VARCHAR(20)
-    ,location          VARCHAR(800)
-    ,method            VARCHAR(256)
-    ,page              VARCHAR(256)
+    ,level             VARCHAR
+    ,location          VARCHAR
+    ,method            VARCHAR
+    ,page              VARCHAR
     ,registration      FLOAT
-    ,session           INTEGER
-    ,song              VARCHAR(800)
+    ,sessionId         INTEGER
+    ,song              VARCHAR
     ,status            INTEGER
     ,ts                TIMESTAMP
-    ,userAgent         VARCHAR(800)
-    ,userId            INTEGER   
+    ,userAgent         VARCHAR
+    ,userId            INTEGER 
 );
 """)
 
@@ -46,13 +46,13 @@ staging_songs_table_create = ("""
 CREATE TABLE IF NOT EXISTS staging_songs
 (
     num_songs          INTEGER
-    ,artist_id         VARCHAR(800)
+    ,artist_id         VARCHAR
     ,artist_latitude   FLOAT
     ,artist_longitude  FLOAT
-    ,artist_location   VARCHAR(800)
-    ,artist_name       VARCHAR(800)
-    ,song_id           VARCHAR(800)
-    ,title             VARCHAR(800)
+    ,artist_location   VARCHAR
+    ,artist_name       VARCHAR
+    ,song_id           VARCHAR
+    ,title             VARCHAR
     ,duration          FLOAT
     ,year              INTEGER
 );
@@ -142,7 +142,8 @@ staging_events_copy = ("""
     COPY staging_events FROM {s3_event_data}
     CREDENTIALS 'aws_iam_role={arn_id}'
     REGION 'us-west-2'
-    FORMAT AS JSON {event_file_path};
+    FORMAT AS JSON {event_file_path}
+    TIMEFORMAT AS 'epochmillisecs';
 """).format(s3_event_data=config['S3']['LOG_DATA'],
             arn_id=config['IAM_ROLE']['ARN'],
             event_file_path=config['S3']['LOG_JSONPATH'])
@@ -157,39 +158,23 @@ staging_songs_copy = ("""
 
 # FINAL TABLES
 
-songplay_table_insert = ("""
-INSERT INTO songplays
-    (start_time, user_id, level, song_id, artist_id, session_id, location, user_agent)
-SELECT (se.ts) AS start_time
-    ,se.userId AS userid
-    ,se.level
-    ,ss.song_id
-    ,ss.artist_id
-    ,se.sessionId AS session_id
-    ,se.location
-    ,se.userAgent AS user_agent
-FROM staging_events se
-JOIN staging_songs ss 
-ON (se.song = ss.title AND se.artist = ss.artist_name)
-AND se.method = "NextSong";
-""")
-
 user_table_insert = ("""
 INSERT INTO users
     (user_id, first_name, last_name, gender, level)
-SELECT userId AS user_id
-    ,title
-    ,artist_id
-    ,year
-    ,duration
-FROM staging_songs
-WHERE artist_id IS NOT NULL;
+SELECT DISTINCT(userId) AS user_id
+    ,firstName AS first_name
+    ,lastName AS last_name
+    ,gender
+    ,level
+FROM staging_events
+WHERE userId IS NOT NULL
+AND page = 'NextSong';
 """)
 
 song_table_insert = ("""
 INSERT INTO songs
     (song_id, title, artist_id, year, duration)
-SELECT song_id
+SELECT DISTINCT(song_id) AS song_id
     ,title
     ,artist_id
     ,year
@@ -201,7 +186,7 @@ WHERE song_id IS NOT NULL;
 artist_table_insert = ("""
 INSERT INTO artists
     (artist_id, name, location, lattitude, longitude)
-SELECT artist_id
+SELECT DISTINCT(artist_id)
     ,artist_name AS name
     ,artist_location AS location
     ,artist_latitude AS latitude
@@ -210,10 +195,27 @@ FROM staging_songs
 WHERE artist_id IS NOT NULL;
 """)
 
+songplay_table_insert = ("""
+INSERT INTO songplays
+    (start_time, user_id, level, song_id, artist_id, session_id, location, user_agent)
+SELECT DISTINCT(se.ts) AS start_time
+    ,se.userId AS userid
+    ,se.level
+    ,ss.song_id
+    ,ss.artist_id
+    ,se.sessionId AS session_id
+    ,se.location
+    ,se.userAgent AS user_agent
+FROM staging_events se
+JOIN staging_songs ss 
+ON (se.song = ss.title AND se.artist = ss.artist_name)
+AND se.page  =  'NextSong';
+""")
+
 time_table_insert = ("""
 INSERT INTO time
     (start_time, hour, day, week, month, year, weekday)
-SELECT start_time
+SELECT DISTINCT(start_time) AS start_time
     ,EXTRACT(hour FROM start_time) AS hour
     ,EXTRACT(day FROM start_time) AS day
     ,EXTRACT(week FROM start_time) AS week
@@ -228,4 +230,4 @@ FROM songplays;
 create_table_queries = [staging_events_table_create, staging_songs_table_create, user_table_create, song_table_create, artist_table_create, time_table_create, songplay_table_create]
 drop_table_queries = [staging_events_table_drop, staging_songs_table_drop, songplay_table_drop, user_table_drop, song_table_drop, artist_table_drop, time_table_drop]
 copy_table_queries = [staging_events_copy, staging_songs_copy]
-insert_table_queries = [user_table_insert, song_table_insert, artist_table_insert, time_table_insert,songplay_table_insert]
+insert_table_queries = [songplay_table_insert,user_table_insert, song_table_insert, artist_table_insert, time_table_insert]
