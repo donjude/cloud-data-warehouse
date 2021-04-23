@@ -225,9 +225,61 @@ SELECT DISTINCT(start_time) AS start_time
 FROM songplays;
 """)
 
+# ANALYTIC QUERIES
+# COUNT THE NUMBER OF ROWS IN EACH TABLE
+table_counts =("""
+SELECT * FROM (
+SELECT 'staging_events' AS table_name, COUNT(*) AS total_records FROM staging_events
+UNION ALL
+SELECT 'staging_songs' AS table_name, COUNT(*) AS total_records FROM staging_events
+UNION ALL
+SELECT 'songplays' AS table_name, COUNT(*) AS total_records FROM songplays
+UNION ALL
+SELECT 'users' AS table_name, COUNT(*) AS total_records FROM users
+UNION ALL
+SELECT 'songs' AS table_name, COUNT(*) AS total_records FROM songs
+UNION ALL
+SELECT 'artists' AS table_name, COUNT(*) AS total_records FROM artists
+UNION ALL
+SELECT 'time' AS table_name, COUNT(*) AS total_records FROM time
+) AS A;
+""")
+
+# Retrieve details of Artist with the highest duration of song played and the song
+artist_with_highest_song_played = ("""
+SELECT a.artist_id
+    ,a.name as artist_name
+    ,b.song_title
+    ,b.time_played
+FROM artists a JOIN (
+      SELECT artist_id, title AS song_title, CAST(SUM(duration) AS NUMERIC(8,2)) AS time_played
+      FROM songs 
+      GROUP BY artist_id, title
+      ORDER BY time_played DESC
+      LIMIT 1) AS b
+ON a.artist_id = b.artist_id;
+""")
+
+artist_with_lowest_song_played = ("""
+SELECT a.artist_id
+    ,a.name as artist_name
+    ,b.song_title
+    ,b.time_played
+FROM artists a JOIN (
+      SELECT artist_id, title AS song_title, CAST(SUM(duration) AS NUMERIC(8,2)) AS time_played
+      FROM songs 
+      GROUP BY artist_id, title
+      ORDER BY time_played ASC
+      LIMIT 1) AS b
+ON a.artist_id = b.artist_id
+""")
+
+
 # QUERY LISTS
 
 create_table_queries = [staging_events_table_create, staging_songs_table_create, user_table_create, song_table_create, artist_table_create, time_table_create, songplay_table_create]
 drop_table_queries = [staging_events_table_drop, staging_songs_table_drop, songplay_table_drop, user_table_drop, song_table_drop, artist_table_drop, time_table_drop]
 copy_table_queries = [staging_events_copy, staging_songs_copy]
 insert_table_queries = [songplay_table_insert,user_table_insert, song_table_insert, artist_table_insert, time_table_insert]
+count_table_rows_query = [table_counts]
+analytic_queries = [table_counts, artist_with_highest_song_played, artist_with_lowest_song_played]
