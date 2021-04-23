@@ -12,7 +12,7 @@ def get_results(cur, conn):
     """
     for query in analytic_queries:
         cur.execute(query)
-        results = cr.fetchall()
+        results = cur.fetchall()
         
         for row in results:
             print(row)
@@ -30,7 +30,7 @@ def main():
     get_results(cur, conn)
 
     conn.close()
-    print('close connection')
+    print('3. close connection')
 
 
 if __name__ == "__main__":
