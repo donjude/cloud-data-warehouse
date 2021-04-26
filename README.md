@@ -16,7 +16,7 @@ In this Project an ETL pipeline would be built for a datawarehouse hosted on Ama
 1. Install AWS Command Line Interface awscli from the Terminal/Bash Shell.
 
     On Linux:<br/>
-    ```$sudo apt install awscli```
+    ```$ sudo apt install awscli```
 
     On Windows:<br/>
      ```C:\> msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi```
@@ -24,16 +24,63 @@ In this Project an ETL pipeline would be built for a datawarehouse hosted on Ama
 
 2. Run pip to install AWS Python SDK(boto3), pandas and psycopg2-binary.
 
-    ```$pip install boto3 pandas psycopg2-binary```
+    ```$ pip install boto3 pandas psycopg2-binary```
 
 
 3. Run the below on your local git bash/Terminal to clone the github repository.
 
-    ```$git clone https://github.com/donjude/cloud-data-warehouse.git```
+    ```$ git clone https://github.com/donjude/cloud-data-warehouse.git```
 
-4. In the cloned repository on your local computer, open the jupyter notebook file `aws_sdk_create_redshift_cluster.ipynb`, follow the instruction and run the notebook cells.
+4. Create an AWS account. Create a configuration file with name `dwh.cfg` in the same folder as the notebook `aws_sdk_create_redshift_cluster.ipynb`, and fill in the necessary details as seen below. You may read more about IAM User, Access Key and Secret Key in the following link: [Create IAM User.](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html#id_users_create_console)
 
-5. 
+
+```
+[AWS]
+KEY         =
+SECRET      =
+
+[CLUSTER]
+HOST        =
+DB_NAME     =
+DB_USER     =
+DB_PASSWORD =
+DB_PORT     = 5439
+
+[IAM_ROLE]
+ARN         = 
+
+[S3]
+LOG_DATA       = 's3://udacity-dend/log_data'
+LOG_JSONPATH   = 's3://udacity-dend/log_json_path.json'
+SONG_DATA      = 's3://udacity-dend/song_data'
+
+
+[DWH] 
+DWH_CLUSTER_TYPE       = multi-node
+DWH_NUM_NODES          = 4
+DWH_NODE_TYPE          = dc2.large
+DWH_IAM_ROLE_NAME      =
+DWH_CLUSTER_IDENTIFIER =
+DWH_DB                 =
+DWH_DB_USER            =
+DWH_DB_PASSWORD        =
+DWH_PORT               = 5439
+```
+
+5. In the cloned repository on your local computer, open the jupyter notebook file `aws_sdk_create_redshift_cluster.ipynb`, follow the instruction and run the notebook cells to create a Redshift Database on AWS.
+
+6. Run the python file `create_tables.py` in the terminal/shell to create the database staging and analytics tables.
+    
+    `$ python create_tables.py`
+
+7. Run the python file `etl.py` to execute the etl process of extracting data from staging to the analytics tables.
+    
+    `$ python etl.py`
+
+8. Run the `analytics.py` file to test the counts of records in each table and also query the tables to get results about which artist and songs has the highest and lowest streaming durations.
+
+
+
 
 TODO:
 - Summary of Project
