@@ -4,12 +4,19 @@ from sql_queries import copy_table_queries, insert_table_queries
 
 
 def load_staging_tables(cur, conn):
+    """
+    Gets data from s3 bucket and loads into staging.
+    """
     for query in copy_table_queries:
         cur.execute(query)
         conn.commit()
 
 
 def insert_tables(cur, conn):
+    """
+    Gets data from the staging tables and insert into
+    analytics tables (the data warehouse)
+    """
     for query in insert_table_queries:
         cur.execute(query)
         conn.commit()
