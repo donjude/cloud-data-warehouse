@@ -6,9 +6,9 @@ from sql_queries import analytic_queries
 def get_results(cur, conn):
     """
     This function retrieves results for the analytic queries.
-    Query1: Retrieves
-    Query2: 
-    Query3: 
+        Query1: count and return all records in each table into on single table
+        Query2: retrieve record for songs and artist with the highest streaming duration
+        Query3: retrieve record for song and artist with the lowest straming duration
     """
     for query in analytic_queries:
         cur.execute(query)
